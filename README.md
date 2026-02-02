@@ -48,7 +48,7 @@ pip install colorama requests speedtest-cli dnspython
    pip install colorama requests speedtest-cli dnspython
    ```
    ```bash
-pip3 install colorama requests speedtest-cli dnspython
+   pip3 install colorama requests speedtest-cli dnspython
    ```
    - 🌈 **colorama:** For colorful console magic.
    - 🌐 **requests:** For HTTP attack power.
