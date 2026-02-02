@@ -29,6 +29,8 @@ No Description
    pkg install python2 -y
    pkg install python3 -y
    pkg install git -y
+   pkg install python-pip -y
+pip install colorama requests speedtest-cli dnspython
    ```
    
 
@@ -43,7 +45,10 @@ No Description
 
 2. **Install required libraries:**
    ```bash
-   pip3 install colorama requests
+   pip install colorama requests speedtest-cli dnspython
+   ```
+   ```bash
+pip3 install colorama requests speedtest-cli dnspython
    ```
    - 🌈 **colorama:** For colorful console magic.
    - 🌐 **requests:** For HTTP attack power.
