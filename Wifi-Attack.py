@@ -548,7 +548,7 @@ def show_main_menu():
     print("  \033[90m[0]\033[97m \033[91mExit\033[97m")
     print("")
     
-    choice = input(Fore.LIGHTBLUE_EX + "Select option (0-6): " + Fore.YELLOW).strip()
+    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect option (0-6): \033[92m").strip()
     return choice
 
 def show_attack_menu():
@@ -573,33 +573,33 @@ def show_attack_menu():
     print("  \033[90m[0]\033[97m \033[91mBack to Main Menu\033[97m")
     print()
     
-    choice = input(Fore.LIGHTBLUE_EX + "Select method (0-9): " + Fore.YELLOW).strip()
+    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect method (0-9): \033[92m").strip()
     return choice
 
 def get_attack_parameters():
     print()
-    print(Fore.LIGHTBLUE_EX + "🔹  ATTACK PARAMETERS  🔹")
-    print("\033[94m" + "="*40)
+    print(Fore.LIGHTBLUE_EX + "\033[92m   🔹 ATTACK PARAMETERS 🔹   \033[97m")
+    print("\033[94m" + "="*30)
     
     # Target IP
     while True:
-        ip = input(Fore.LIGHTBLUE_EX + "Target IP: " + Fore.YELLOW).strip()
+        ip = input(Fore.LIGHTBLUE_EX + "\033[97mTarget IP: \033[92m").strip()
         if ip:
             if not is_target_allowed(ip):
                 continue
             break
     
     # Port
-    port = validate_input("Target Port (1-65535, default 80): ", 1, 65535, default=80)
+    port = validate_input("\033[97mTarget Port (1-65535, default 80): \033[92m", 1, 65535, default=80)
     
     # Duration
-    duration = validate_input("Duration in seconds: ", 1, 99999, float, default=99999)
+    duration = validate_input("\033[97mDuration in seconds: \033[92m", 1, 99999, float, default=99999)
     
     # Packet size
-    packet_size = validate_input("Packet size in bytes (65500): ", 1, 65500, default=65500)
+    packet_size = validate_input("\033[97mPacket size in bytes (65500): \033[92m", 1, 65500, default=65500)
     
     # Thread count
-    thread_count = validate_input("Thread count (default 1): ", 1, 1, default=1)
+    thread_count = validate_input("\033[97mThread count (default 1): \033[92m", 1, 1, default=1)
     
     return {
         'ip': ip,
@@ -682,10 +682,10 @@ def run_attack(method_choice, params):
 # ============================================
 def show_target_info():
     print_banner()
-    print(Fore.LIGHTBLUE_EX + "🔹  TARGET INFORMATION  🔹")
-    print("\033[94m" + "="*40)
+    print(Fore.LIGHTBLUE_EX + "\033[92m   🔹 TARGET INFORMATION 🔹   \033[97m")
+    print("\033[94m" + "="*31)
     
-    ip = input(Fore.LIGHTBLUE_EX + "Enter IP address: " + Fore.YELLOW).strip()
+    ip = input(Fore.LIGHTBLUE_EX + "\033[97mEnter IP address: \033[92m").strip()
     if not ip:
         return
     
@@ -739,7 +739,7 @@ def show_settings():
     print(Fore.YELLOW + "[4] View Blacklist")
     print(Fore.YELLOW + "[5] Back to Main")
     
-    choice = input(Fore.LIGHTBLUE_EX + "\nSelect option: " + Fore.YELLOW).strip()
+    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect option: \033[92m").strip()
     
     if choice == '1':
         print(Fore.GREEN + f"\nWhitelist: {WHITELIST}")
@@ -808,7 +808,7 @@ def main():
             print(Fore.YELLOW + "[2] Load Saved Settings")
             print(Fore.YELLOW + "[3] Back")
             
-            config_choice = input(Fore.LIGHTBLUE_EX + "\nSelect: " + Fore.YELLOW).strip()
+            config_choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect: \033[92m").strip()
             
             if config_choice == '1':
                 config = {
