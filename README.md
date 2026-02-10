@@ -35,7 +35,7 @@ No Description
 2. **Clone the repository:**
    ```bash
    git clone https://github.com/Biodata-Projects/Wifi-Attack.git
-   cd Wifi-Jammer
+   cd Wifi-Attack
    
    ```
 
