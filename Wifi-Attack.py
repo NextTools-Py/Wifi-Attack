@@ -21,6 +21,17 @@ import select
 from datetime import datetime
 from email.mime.text import MIMEText
 
+# ASCII Art Color 
+
+#Red: \033[91m
+#Green: \033[92m
+#Yellow: \033[93m
+#Blue: \033[94m
+#Magenta: \033[95m
+#Cyan: \033[96m
+#White: \033[97m
+#Black: \033[90m
+
 # Library opsional dengan graceful handling
 try:
     from colorama import init, Fore, Style
@@ -140,7 +151,7 @@ def load_users():
         except:
             pass
     # Default
-    return {"Admin": hash_password("Admin")}
+    return {"A": hash_password("A")}
 
 def save_users(users):
     with open(USER_DB, 'w') as f:
@@ -780,42 +791,58 @@ def print_banner():
 
 def show_main_menu():
     print(Fore.LIGHTBLUE_EX + "\n        🔹 MAIN MENU 🔹        ")
-    print(Fore.BLUE + "="*32)
+    print(Fore.BLUE + "\033[92m=\033[97m"*32)
     print("")
-    print("  [1] Network Attack Methods")
-    print("  [2] Target Information")
-    print("  [3] Load/Save Configuration")
-    print("  [4] View Previous Results")
-    print("  [5] Settings & Whitelist")
-    print("  [6] Import Targets from File (Fitur 13)")
-    print("  [7] Hybrid Attack Mode (Fitur 7)")
-    print("  [8] Generate Report (Fitur 4)")
-    print("  [9] Verify Target Ownership (Fitur 6)")
-    print("  [0] Exit")
+    print("  \033[92m[1]\033[97m \033[91mNetwork Attack Methods\033[97m")
     print("")
-    choice = input(Fore.LIGHTBLUE_EX + "Select option (0-9): ").strip()
+    print("  \033[92m[2]\033[97m \033[91mTarget Information\033[97m")
+    print("")
+    print("  \033[92m[3]\033[97m \033[91mLoad/Save Configuration\033[97m")
+    print("")
+    print("  \033[92m[4]\033[97m \033[91mView Previous Results\033[97m")
+    print("")
+    print("  \033[92m[5]\033[97m \033[91mSettings & Whitelist\033[97m")
+    print("")
+    print("  \033[92m[6]\033[97m \033[91mImport Targets from File (Fitur 13)\033[97m")
+    print("")
+    print("  \033[92m[7]\033[97m \033[91mHybrid Attack Mode (Fitur 7)\033[97m")
+    print("")
+    print("  \033[92m[8]\033[97m \033[91mGenerate Report (Fitur 4)\033[91m")
+    print("")
+    print("  \033[92m[9]\033[97m \033[91mVerify Target Ownership (Fitur 6)\033[97m")
+    print("")
+    print("  \033[92m[0]\033[97m \033[91mExit\033[97m")
+    print("")
+    choice = input(Fore.LIGHTBLUE_EX + "\033[97mSelect option (0-9): \033[92m").strip()
     return choice
 
 def show_attack_menu():
     print_banner()
     print(Fore.LIGHTBLUE_EX + "\n    🔹 ATTACK METHODS 🔹    ")
-    print(Fore.BLUE + "="*32)
+    print(Fore.BLUE + "\033[92m=\033[97m"*32)
     print()
     print(Fore.YELLOW + "[UDP ATTACKS]")
-    print("  [1] UDP Spam Flood")
-    print("  [2] UDP Handshake Flood")
-    print("  [3] UDP Query Flood")
+    print("  \033[92m[1]\033[97m \033[91mUDP Spam Flood\033[97m")
+    print("")
+    print("  \033[92m[2]\033[97m \033[91mUDP Handshake Flood\033[97m")
+    print("")
+    print("  \033[92m[3]\033[97m \033[91mUDP Query Flood\033[97m")
     print()
+    print("")
     print(Fore.YELLOW + "[TCP ATTACKS]")
-    print("  [4] TCP Connect Flood")
-    print("  [5] TCP Join Flood")
-    print("  [6] TCP Login Flood")
+    print("  \033[92m[4]\033[97m \033[91mTCP Connect Flood\033[97m")
+    print("")
+    print("  \033[92m[5]\033[97m \033[91mTCP Join Flood\033[97m")
+    print("")
+    print("  \033[92m[6]\033[97m \033[91mTCP Login Flood\033[97m")
     print()
+    print("")
     print(Fore.YELLOW + "[LAYER 7 ATTACKS]")
-    print("  [7] HTTP/HTTPS Flood (Fitur 2)")
-    print("  [8] Slowloris Attack (Fitur 11)")
+    print("  \033[92m[7]\033[97m \033[91mHTTP/HTTPS Flood (Fitur 2)\033[97m")
+    print("")
+    print("  \033[92m[8]\033[97m \033[91mSlowloris Attack (Fitur 11)\033[97m")
     print()
-    print("  [0] Back to Main Menu")
+    print("  \033[92m[0]\033[97m \033[91mBack to Main Menu\033[97m")
     print()
     choice = input(Fore.LIGHTBLUE_EX + "Select method (0-8): ").strip()
     return choice
