@@ -76,7 +76,7 @@ try:
 except ImportError:
     rich_available = False
 
-VERSION = "3.0 (Dengan 15 Fitur)"
+VERSION = "3.0"
 DEVELOPER = "Security Tool"
 WHITELIST = ['127.0.0.1']
 BLACKLIST = []
@@ -569,60 +569,6 @@ def generate_html_report(attack_data, filename="report.html"):
         log_activity("REPORT_HTML", f"Laporan HTML dibuat: {filename}")
     except Exception as e:
         print(Fore.RED + f"[✗] Gagal membuat HTML: {e}")
-
-def verify_target_ownership(domain):
-    if not whois:
-        print(Fore.YELLOW + "[!] whois tidak terinstal. Verifikasi dilewati.")
-        return True
-    try:
-        w = whois.whois(domain)
-        emails = w.emails
-        if not emails:
-            print(Fore.YELLOW + "[!] Tidak ditemukan email kontak.")
-            return True
-
-        code = str(random.randint(100000, 999999))
-        sender = "MyBion@proton.me"
-        password = "@adalah@pokonya$"
-        msg = MIMEText(f"Kode verifikasi Anda: {code}")
-        msg['Subject'] = "Verifikasi Target"
-        msg['From'] = sender
-        msg['To'] = emails[0]
-        try:
-            server = smtplib.SMTP('smtp.gmail.com', 587)
-            server.starttls()
-            server.login(sender, password)
-            server.send_message(msg)
-            server.quit()
-            user_code = input("Masukkan kode verifikasi yang dikirim ke email admin: ").strip()
-            if user_code == code:
-                print(Fore.GREEN + "[✓] Verifikasi berhasil!")
-                log_activity("VERIFY", f"Target {domain} diverifikasi")
-                return True
-            else:
-                print(Fore.RED + "[✗] Kode salah!")
-                return False
-        except Exception as e:
-            print(Fore.RED + f"[✗] Gagal mengirim email: {e}")
-            return True
-    except:
-        return True
-
-def send_notification(subject, body, to_email="your_email@gmail.com"):
-    try:
-        sender = "your_email@gmail.com"
-        password = "your_password"
-        msg = MIMEText(body)
-        msg['Subject'] = subject
-        msg['From'] = sender
-        msg['To'] = to_email
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(sender, password)
-        server.send_message(msg)
-        server.quit()
-    except Exception as e:
-        print(Fore.RED + f"[!] Gagal kirim notifikasi: {e}")
 
 def load_key():
     if not os.path.exists(SECRET_KEY_FILE):
@@ -1186,16 +1132,12 @@ def save_results(attack_data):
                 f.write(f"{key}: {value}\n")
         print(Fore.GREEN + f"[✅] Results saved to {RESULTS_FILE}")
         log_activity("SAVE_RESULTS", f"Hasil disimpan, timestamp {timestamp}")
-        # Tawarkan enkripsi
         enc = input(Fore.CYAN + "Enkripsi file hasil? (y/n): ").lower()
         if enc == 'y':
             encrypt_file(RESULTS_FILE)
     except Exception as e:
         print(Fore.RED + f"[❌] Failed to save results: {e}")
 
-# ============================================
-# ENTRY POINT
-# ============================================
 if __name__ == "__main__":
     try:
         if os.name == 'posix':
