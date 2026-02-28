@@ -198,22 +198,35 @@ def validate_ip(prompt):
 def main():
     print(Fore.YELLOW + ASCII_ART)
     print(Fore.LIGHTBLUE_EX + "   🔹 Wifi Attack Methods 🔹   ")
+    print("")
     print("  [1]. UDP Attack")
+    print("")
     print("  [2]. TCP Attack")
+    print("")
     print("  [3]. HTTP Attack")
+    print("")
     attack_type = input(Fore.LIGHTBLUE_EX + "Select attack type (1-3): ").strip()
-
+    print("")
     ip = validate_ip("IP Gateway Wifi: ")
+    print("")
     port = validate_input("Enter port (default 80): ", 1, 65535, default=80)
+    print("")
     duration = validate_input("Enter duration (seconds): ", 1, 1e9, float)
+    os.system("clear")
 
     if attack_type == "1":
         print(Fore.LIGHTBLUE_EX + " \n🔹 UDP Methods 🔹 ")
+        print("")
         print("  [1]. UDP Spam")
-        print("  [2]. UDP Handshake")  
+        print("")
+        print("  [2]. UDP Handshake")
+        print("")
         print("  [3]. UDP Query")
+        print("")
         method = input(Fore.LIGHTBLUE_EX + "Select method (1-3): ").strip()
+        print("")
         packet_size = validate_input("Enter packet size (1-65500): ", 1, 65500)
+        print("")
 
         methods = {
             "1": udp_spam,
@@ -227,11 +240,17 @@ def main():
 
     elif attack_type == "2":
         print(Fore.LIGHTBLUE_EX + " \n🔹 TCP Methods 🔹 ")
+        print("")
         print("  [1]. TCP Connect")
+        print("")
         print("  [2]. TCP Join")
+        print("")
         print("  [3]. TCP Login")
+        print("")
         method = input(Fore.LIGHTBLUE_EX + "Select method (1-3): ").strip()
+        print("")
         packet_size = validate_input("Enter packet size (1-65500): ", 1, 65500)
+        print("")
 
         methods = {
             "1": tcp_connect,
@@ -245,9 +264,13 @@ def main():
 
     elif attack_type == "3":
         print(Fore.LIGHTBLUE_EX + " \n🔹 HTTP Methods 🔹 ")
+        print("")
         print("  1. HTTP Status Flood")
+        print("")
         print("  2. HTTP Query Flood")
+        print("")
         method = input(Fore.LIGHTBLUE_EX + "Select method (1-2): ").strip()
+        print("")
 
         methods = {
             "1": http_status_flood,
